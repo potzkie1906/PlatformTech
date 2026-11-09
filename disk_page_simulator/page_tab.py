@@ -35,8 +35,12 @@ class PageTab(ctk.CTkFrame):
 
     # ----- layout ---------------------------------------------------------
     def _build_inputs(self):
-        p = InputPanel(self, "Page Replacement")
-        p.grid(row=0, column=0, sticky="ns", padx=(16, 12), pady=16)
+        viewport = ctk.CTkScrollableFrame(
+            self, width=InputPanel.WIDTH + 36, fg_color=C("card"), corner_radius=14,
+        )
+        viewport.grid(row=0, column=0, sticky="nsew", padx=(16, 12), pady=16)
+        p = InputPanel(viewport, "Page Replacement")
+        p.pack(fill="x")
 
         p.label("Reference string", span=1, top=10, hint="spaces or commas")
         p.next_row()

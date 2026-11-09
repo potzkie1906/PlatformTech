@@ -37,3 +37,42 @@ Keep all the `.py` files together in the same folder.
 | `disk_algorithms.py` | Part 1 – disk scheduling algorithms |
 | `page_algorithms.py` | Part 2 – page replacement algorithms |
 | `self_test.py` | the `--test` check |
+
+# Operating Systems Simulator
+
+A Python desktop app with five tabs in one window.
+
+| Tab | What it covers |
+|---|---|
+| 1. Priority | FCFS, non-preemptive SJF, preemptive SRTF, and Priority Scheduling. |
+| 2. Round Robin | FCFS, SJF, SRTF, and Round Robin. |
+| 3. Page Replacement | FIFO, LRU, and Optimal with frame traces and hit and fault totals. |
+| 4. Disk Scheduling | FCFS, SSTF, and SCAN with head movement and algorithm comparison. |
+| 5. Banker's | Safety trace and optional resource-request check. |
+
+## Set up and run on Windows
+
+Install Python 3.10 or newer with Tkinter. Open PowerShell in the folder containing `main.py`.
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe main.py --test
+.\.venv\Scripts\python.exe main.py
+```
+
+## Simulator conventions
+
+- Priority starts in non-preemptive mode with smaller priority numbers first. The form lets you choose the convention used in class.
+- In Round Robin, an arrival at the end of a time slice joins the queue before the unfinished running process rejoins.
+- Disk cylinders range from `0` to `total cylinders - 1`. SCAN travels to the selected boundary before reversing.
+- Banker's request check tests a tentative allocation against the current input snapshot.
+- Use the topic and algorithms assigned by your instructor when preparing a class submission.
+
+## References
+
+- Scheduling policies and timing metrics. [OSTEP Chapter 7](https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched.pdf)
+- Priority modes and ranking conventions. [UIC CPU Scheduling notes](https://www.cs.uic.edu/~jbell/CourseNotes/OperatingSystems/6_CPU_Scheduling.html)
+- Banker's safety and request algorithms. [UMass Amherst CS377](https://lass.cs.umass.edu/~shenoy/courses/fall15/lectures/Lec11.pdf)
+
+OpenAI ChatGPT assisted with the implementation, merge walkthrough, and verification. Describe your own changes and checks using your course's required disclosure format.

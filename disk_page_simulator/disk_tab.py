@@ -9,7 +9,7 @@ import customtkinter as ctk
 
 from canvas_card import CanvasCard
 from compare_window import CompareWindow
-from disk_algorithms import CIRCULAR_ALGORITHMS, DIRECTION_ALGORITHMS, DISK_ALGORITHMS, solve_disk
+from disk_algorithms import DISK_ALGORITHMS, solve_disk
 from helpers import (_pull_back, _sign, draw_table, fmt, output_textbox, read_int, set_entry,
                      set_text, split_tokens, two_dp, write_text)
 from input_panel import InputPanel, input_textbox
@@ -19,6 +19,7 @@ from theme import C, CFONT, DIRECTION_LABELS, FONT, P, entry_style, option_style
 
 
 class DiskTab(ctk.CTkFrame):
+    ALGORITHMS = ("FCFS", "SSTF", "SCAN")
     EXAMPLE = {"queue": "98, 183, 37, 122, 14, 124, 65, 67", "head": "53", "cylinders": "200"}
     EMPTY_MESSAGE = ("Enter the request queue and the starting head position,\n"
                      "choose an algorithm, then click Solve.")
@@ -37,8 +38,12 @@ class DiskTab(ctk.CTkFrame):
 
     # ----- layout ---------------------------------------------------------
     def _build_inputs(self):
-        p = InputPanel(self, "Disk Scheduling")
-        p.grid(row=0, column=0, sticky="ns", padx=(16, 12), pady=16)
+        viewport = ctk.CTkScrollableFrame(
+            self, width=InputPanel.WIDTH + 36, fg_color=C("card"), corner_radius=14,
+        )
+        viewport.grid(row=0, column=0, sticky="nsew", padx=(16, 12), pady=16)
+        p = InputPanel(viewport, "Disk Scheduling")
+        p.pack(fill="x")
 
         p.label("Request queue", span=1, top=10, hint="spaces or commas")
         p.next_row()
@@ -57,7 +62,7 @@ class DiskTab(ctk.CTkFrame):
         p.label("Algorithm")
         p.next_row()
         self.algo_var = tk.StringVar(value="FCFS")
-        p.put(ctk.CTkOptionMenu(p, values=list(DISK_ALGORITHMS), variable=self.algo_var,
+        p.put(ctk.CTkOptionMenu(p, values=list(self.ALGORITHMS), variable=self.algo_var,
                                 command=self._algorithm_changed, width=InputPanel.WIDTH,
                                 **option_style()))
         p.next_row()
@@ -71,13 +76,6 @@ class DiskTab(ctk.CTkFrame):
             width=InputPanel.WIDTH, dynamic_resizing=False, **segment_style()))
         self.direction.set(DIRECTION_LABELS["up"])
         p.next_row()
-        self.count_return_var = tk.BooleanVar(value=True)
-        self.return_switch = p.put(ctk.CTkSwitch(
-            p, text="Count the return jump", variable=self.count_return_var, onvalue=True,
-            offvalue=False, command=self._auto_solve, font=FONT.ui, text_color=C("text"),
-            progress_color=C("accent")), top=8, sticky="w")
-        p.next_row()
-
         p.put(ctk.CTkLabel(p, text="Seek time per\ncylinder (ms)", font=FONT.bold,
                            text_color=C("text"), justify="left", anchor="w"),
               column=0, span=1, top=10, sticky="w")
@@ -135,9 +133,7 @@ class DiskTab(ctk.CTkFrame):
     def _algorithm_changed(self, choice=None):
         name = self.algo_var.get()
         self.description.configure(text=DISK_ALGORITHMS[name][1])
-        self.direction.configure(state="normal" if name in DIRECTION_ALGORITHMS else "disabled")
-        self.return_switch.configure(state="normal" if name in CIRCULAR_ALGORITHMS
-                                     else "disabled")
+        self.direction.configure(state="normal" if name == "SCAN" else "disabled")
         if choice is not None:
             self._auto_solve()
 
@@ -206,27 +202,25 @@ class DiskTab(ctk.CTkFrame):
                 messagebox.showerror("Please check your input", str(error), parent=self)
             return "break"
         self.result = solve_disk(self.algo_var.get(), requests, head, last,
-                                 self._direction(), bool(self.count_return_var.get()))
+                                 self._direction())
         self.seek_rate = rate
         self._show_results()
         return "break"           # stops the Enter key from adding a new line
 
     def compare(self):
-        """Run all six algorithms on the same input and compare them."""
+        """Run the three required algorithms on the same input and compare them."""
         try:
             requests, head, last, _rate = self._read_inputs()
         except ValueError as error:
             messagebox.showerror("Please check your input", str(error), parent=self)
             return
         direction = self._direction()
-        count_return = bool(self.count_return_var.get())
-        results = [solve_disk(name, requests, head, last, direction, count_return)
-                   for name in DISK_ALGORITHMS]
+        results = [solve_disk(name, requests, head, last, direction)
+                   for name in self.ALGORITHMS]
         moving = "toward higher cylinders" if direction == "up" else "toward 0"
         subtitle = (f"Queue: {', '.join(map(str, requests))}\n"
                     f"Head at {head}   •   cylinders 0 to {last}   •   "
-                    f"SCAN/LOOK family moving {moving}   •   "
-                    f"return jump {'counted' if count_return else 'not counted'}")
+                    f"SCAN moving {moving}")
         CompareWindow(
             self, "Disk scheduling: all algorithms", subtitle, "cylinders",
             bars=[(r.algorithm, r.total) for r in results],
@@ -271,7 +265,7 @@ class DiskTab(ctk.CTkFrame):
 
     def _fill_solution(self):
         r = self.result
-        uses_direction = r.algorithm in DIRECTION_ALGORITHMS
+        uses_direction = r.algorithm == "SCAN"
         heading = f"{r.algorithm}: head starts at {r.head}"
         if uses_direction:
             heading += ", moving " + ("toward higher cylinders" if r.direction == "up"
